@@ -1,0 +1,31 @@
+
+Cpython:S125ƒ"Remove this commented out code.(­ÉÜ€ûÿÿÿÿ8ù£¼ïè-
+Jpython:S1481°"*Remove the unused local variable "images".(ªù¼¹8ù£¼ïè-
+upython:S117™"VRename this local variable "new_E" to match the regular expression ^[_a-z][a-z0-9_]*$.(ì®Á8ù£¼ïè-
+|python:S117ç"XRename this local variable "all_NCD" to match the regular expression ^[_a-z][a-z0-9_]*$.(Ş¬åûÿÿÿÿ8ù£¼ïè-
+Cpython:S125Ş"Remove this commented out code.(½ôÚ»ûÿÿÿÿ8ÔÎ½™ê-
+>python:S125×"Remove this commented out code.(öÀ«û8ù£¼ïè-
+ypython:S3776„
+"TRefactor this function to reduce its Cognitive Complexity from 37 to the 15 allowed.(ù¸ğ—ûÿÿÿÿ8ù£¼ïè-
+tpython:S117¨"VRename this local variable "new_E" to match the regular expression ^[_a-z][a-z0-9_]*$.(œíÛ08ù£¼ïè-
+>python:S125«"Remove this commented out code.(ü¹ÍÛ8ù£¼ïè-
+{python:S117™"WRename this local variable "X_test" to match the regular expression ^[_a-z][a-z0-9_]*$.(‚Âúşúÿÿÿÿ8ù£¼ïè-
+lpython:S117—"MRename this parameter "X" to match the regular expression ^[_a-z][a-z0-9_]*$.(å¡ºí8ù£¼ïè-
+Wpython:S1481¢	"2Remove the unused local variable "germ_pro_total".(‹Ã¸âıÿÿÿÿ8ù£¼ïè-
+=python:S125š"Remove this commented out code.(É¾Ê}8ù£¼ïè-
+{python:S117ˆ"WRename this local variable "blue_E" to match the regular expression ^[_a-z][a-z0-9_]*$.(ÄÇ˜Ûÿÿÿÿÿ8ù£¼ïè-
+Cpython:S125Æ"Remove this commented out code.(½…şîıÿÿÿÿ8®é¹–é-
+>python:S125ô"Remove this commented out code.(ø•ë¹8ù£¼ïè-
+lpython:S117Ñ"MRename this parameter "X" to match the regular expression ^[_a-z][a-z0-9_]*$.(‡±å8ù£¼ïè-
+upython:S117¨"WRename this local variable "blue_E" to match the regular expression ^[_a-z][a-z0-9_]*$.(œíÛ08ù£¼ïè-
+Hpython:S1763ú"#Remove the code after this "raise".(ÏõîËûÿÿÿÿ8ù£¼ïè-
+>python:S125«"Remove this commented out code.(†§è¿8ù£¼ïè-
+ypython:S3776²"TRefactor this function to reduce its Cognitive Complexity from 56 to the 15 allowed.(›‚üèúÿÿÿÿ8ù£¼ïè-
+Hpython:S108Ç")Either remove or fill this block of code.(ã‘Û¾8ù£¼ïè-
+Cpython:S125²"Remove this commented out code.(²¿Èúÿÿÿÿ8ù£¼ïè-
+ypython:S3776ì"TRefactor this function to reduce its Cognitive Complexity from 97 to the 15 allowed.(¼çŞ¾şÿÿÿÿ8ù£¼ïè-
+|python:S117™"XRename this local variable "X_train" to match the regular expression ^[_a-z][a-z0-9_]*$.(‚Âúşúÿÿÿÿ8ù£¼ïè-
+|python:S117Ò"XRename this local variable "X_stats" to match the regular expression ^[_a-z][a-z0-9_]*$.(ßÈ¹Ôûÿÿÿÿ8ù£¼ïè-
+>python:S125à"Remove this commented out code.(Úğ®’8ù£¼ïè-
+lpython:S117ß"MRename this parameter "E" to match the regular expression ^[_a-z][a-z0-9_]*$.(üÖò 8ù£¼ïè-
+lpython:S117ß"MRename this parameter "X" to match the regular expression ^[_a-z][a-z0-9_]*$.(üÖò 8ù£¼ïè-

@@ -1,0 +1,10 @@
+
+bpython:S107"KMethod "__init__" has 8 parameters, which is greater than the 7 authorized.(›ÊÒ†
+;python:S125"Remove this commented out code.(¤°´şÿÿÿÿ
+mpython:S3776Š"TRefactor this function to reduce its Cognitive Complexity from 31 to the 15 allowed.(’ô‚¤
+7python:S125Ê"Remove this commented out code.(«ÜØ
+7python:S125€"Remove this commented out code.(Š«ÛŸ
+Cpython:S125"Remove this commented out code.(ê¾¾€ÿÿÿÿÿ8‡õº“ê-
+=python:S125†"Remove this commented out code.(¦¿„z8‡õº“ê-
+qpython:S3776."TRefactor this function to reduce its Cognitive Complexity from 35 to the 15 allowed.(ËƒšÊıÿÿÿÿ
+xpython:S100´"`Rename method "HMM_TEST_build_classifier" to match the regular expression ^[a-z_][a-z0-9_]{2,}$.(´™á÷
