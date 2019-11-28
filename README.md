@@ -39,7 +39,7 @@ If you wish to run SeedGerm from the code, you will need to set up Python on you
 
 3. Install packages:
 
-   • AirSurf uses a number of 3rd-party libraries that you may need to add to your conda environment.
+   • SeedGerm uses a number of 3rd-party libraries that you may need to add to your conda environment.
    These include, but are not limited to:
    
         scikit-image
