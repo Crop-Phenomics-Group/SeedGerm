@@ -1,0 +1,44 @@
+{
+  "chunk_no": 3,
+  "chunk_reverse": false,
+  "proportions": [
+    0.25,
+    0.5,
+    0.75
+  ],
+	"seeds" :
+	[
+	{
+		"seed":"brassica",
+		"seed_pix_n":50,
+		"spp_mask_dilate":3,
+		"germ_true_width":7
+	},
+	{
+		"seed":"corn",
+		"seed_pix_n":80,
+		"spp_mask_dilate":4,
+		"germ_true_width":5,
+		"area_growth_min":1.2
+	},
+	{
+		"seed":"tomato",
+		"seed_pix_n":50,
+      "spp_mask_dilate": 3,
+      "germ_true_width": 5
+    },
+      {
+        "seed": "wheat",
+        "seed_pix_n": 70,
+        "spp_mask_dilate": 3,
+        "germ_true_width": 7,
+        "area_growth_min": 2.5
+      },
+      {
+        "seed": "cereals",
+        "seed_pix_n": 70,
+		"spp_mask_dilate":3,
+		"germ_true_width":7
+	}
+	]
+}
