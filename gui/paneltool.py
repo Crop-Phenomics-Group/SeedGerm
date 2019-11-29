@@ -2,6 +2,7 @@
 # -*- coding: utf-8 -*-
 
 import os
+import sys
 import time
 import tkinter as Tkinter
 
@@ -51,7 +52,7 @@ class PanelTool(Tkinter.Toplevel):
         
         self.title("Panel tool")
         self.resizable(width=False, height=False)
-        self.iconbitmap('.\logo.ico')
+        self.iconbitmap(sys._MEIPASS + '.\logo.ico')
         
         self.fig = plt.Figure(figsize=(8., 8.))
         self.ax = self.fig.add_subplot(111)

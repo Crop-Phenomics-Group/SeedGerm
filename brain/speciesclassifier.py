@@ -264,9 +264,6 @@ class SpeciesClassifier:
         return sm_extracted, (min_row, min_col, max_row, max_col)
 
     def _classify(self, panel, all_imgs, p_labels, p_rprops, p_masks, all_imgs_list):
-        print(self.__class__.__name__, "classify")
-        print("using colour: " + str(self.use_colour))
-
         self.panel = panel
         self.all_imgs = all_imgs
         self.panel_labels = p_labels
@@ -278,7 +275,6 @@ class SpeciesClassifier:
         seed_classification = {}
         cols = []
 
-        print(len(self.panel_regionprops))
         # For all the found seeds of the input panel.
         for index, rp in enumerate(self.panel_regionprops):
             cols.append(rp.label)

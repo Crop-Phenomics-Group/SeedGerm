@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
 import tkinter as Tkinter
-
+import sys
 from gui.maskviewer import MaskViewer
 
 
@@ -12,4 +12,4 @@ class GerminationViewer(MaskViewer):
         MaskViewer.__init__(self, exp)
         
         self.title("Lal")
-        self.iconbitmap('.\logo.ico')
+        self.iconbitmap(sys._MEIPASS + '.\logo.ico')

@@ -11,6 +11,7 @@ import tkinter as Tkinter
 from itertools import chain
 from operator import itemgetter
 from tkinter import messagebox
+import sys
 
 import matplotlib.pyplot as plt
 import seaborn as sns
@@ -24,6 +25,8 @@ from skimage.transform import rescale
 from helper.experiment import Experiment
 from helper.functions import *
 from helper.panel_segmenter import fill_border
+import warnings
+warnings.filterwarnings("ignore")
 
 sns.set_style("white")
 
@@ -300,7 +303,7 @@ class YUVRanges(Tkinter.Toplevel):
             )
 
         if yes_overwrite:
-            print("setting yuv")
+            print("Setting yuv")
             self.exp.yuv_ranges_set = True
             with open(self.yuv_json_file, "w+") as fh:
                 json.dump(yuv_ranges, fh)
@@ -320,11 +323,11 @@ class YUVPanelRanges(Tkinter.Toplevel):
             "yuv_ranges.json"
         )
 
-        self.title("Set YUV ranges")
+        self.title("Set YUV panel ranges")
         self.resizable(width=False, height=False)
         self.iconbitmap('.\logo.ico')
 
-        data = json.load(open("config.json"))
+        data = json.load(open('config.json'))
         self.chunk_no = data["chunk_no"]
         self.chunk_reverse = data["chunk_reverse"]
 
@@ -389,7 +392,6 @@ class YUVPanelRanges(Tkinter.Toplevel):
         panels = sorted(panels, key=itemgetter(1))
         panels = chunks(panels, self.chunk_no)
         panels = [sorted(p, key=itemgetter(2), reverse=self.chunk_reverse) for p in panels]
-        print(panels)
         panels = list(chain(*panels))
 
         # set mask, where 1 is top left, 2 is top right, 3 is middle left, etc
@@ -403,12 +405,9 @@ class YUVPanelRanges(Tkinter.Toplevel):
 
         self.idx_max = len(panel_list)
 
-        print(self.panel_list)
-
         def _panel_yuv(self, p):
             self.idx = self.idx_p
             p = self.panel_list[idx_p]
-            print(p)
             self.indicator = 0
             img_01 = self.img_01[p[0]:p[2], p[1]:p[3]]
             img_02 = self.img_02[p[0]:p[2], p[1]:p[3]]
@@ -660,8 +659,6 @@ class YUVPanelRanges(Tkinter.Toplevel):
             "yuv_ranges_{}.json".format(self.idx_p + 1)
         )
 
-        print(new_path, self.idx_p)
-
         if os.path.exists(new_path):
             yes_overwrite = messagebox.askyesno(
                 "",
@@ -669,12 +666,10 @@ class YUVPanelRanges(Tkinter.Toplevel):
             )
 
         if yes_overwrite:
-            print("setting yuv")
+            print("Setting YUV range for panel {}".format(self.idx_p + 1))
             with open(new_path, "w+") as fh:
                 json.dump(yuv_ranges, fh)
             self.destroy()
-
-        print(self.idx_p + 1, self.idx_max)
 
         if self.idx_p + 1 < self.idx_max:
             YUVPanelRanges.__init__(self, app=self.app, exp=self.exp, idx_p=self.idx_p + 1)

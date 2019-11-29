@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 
 import os
+import sys
 import tkinter as Tk
 
 import matplotlib.pyplot as plt
@@ -19,7 +20,7 @@ class ViewResults(Tk.Toplevel):
     def __init__(self, exp):
         Tk.Toplevel.__init__(self)
 
-        self.iconbitmap('.\logo.ico')
+        self.iconbitmap(sys._MEIPASS + '.\logo.ico')
 
         self.exp = exp #type: Experiment
         self.exp_results_graph = pj(self.exp.get_results_dir(), "results.jpg")

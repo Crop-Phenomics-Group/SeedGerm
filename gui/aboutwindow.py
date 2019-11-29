@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 
 import tkinter as Tkinter
+import sys
 
 
 about_text = """
@@ -8,7 +9,7 @@ SeedGerm - Beta release
 
 Property of: Crop Phenomics Group, Earlham Institute, Norwich Research Park, UK
 
-Authors:  Aaron Bostrom, Ji Zhou, Danny Websdale, Thomas Le Cornu, Joshua Ball
+Authors:  Joshua Colmer, Aaron Bostrom, Ji Zhou, Danny Websdale, Thomas Le Cornu, Joshua Ball
 """
 
 
@@ -23,7 +24,7 @@ class AboutWindow(Tkinter.Toplevel):
         self.wm_geometry("420x250")
         self.iconbitmap('.\logo.ico')
 
-        photo = Tkinter.PhotoImage(file="./icon.gif")
+        photo = Tkinter.PhotoImage(file=("./icon.gif"))
         w = Tkinter.Label(self, image=photo)
         w.photo = photo
         w.pack()

@@ -6,39 +6,42 @@ import sys
 import tkinter as Tkinter
 from tkinter import filedialog
 from tkinter import messagebox
-from tinydb import where
 from helper.functions import slugify, get_images_from_dir
 from helper.experiment import Experiment
 
 pj = os.path.join
 
 
-class AddExperiment(Tkinter.Toplevel):
-    def __init__(self, app):
+class EditExperiment(Tkinter.Toplevel):
+    def __init__(self, app, experiment, idx):
         Tkinter.Toplevel.__init__(self)
 
         self.app = app
         self.db = Experiment.database
+        self.idx = idx
+        self.experiment = experiment
 
-        self.title("Add experiment")
+        self.title("Edit experiment")
         self.resizable(width=False, height=False)
-        self.iconbitmap(
-
-            '.\logo.ico')
+        self.iconbitmap('.\logo.ico')
 
         self.name_label = Tkinter.Label(
             master=self,
             text="Experiment name: ",
             anchor=Tkinter.W
         )
-        self.name_entry = Tkinter.Entry(master=self)
+        v = Tkinter.StringVar()
+        self.name_entry = Tkinter.Entry(master=self, text=v)
+        v.set(experiment.name)
 
         self.dir_label = Tkinter.Label(
             master=self,
             text="Image directory: ",
             anchor=Tkinter.W
         )
-        self.dir_entry = Tkinter.Entry(master=self)
+        v = Tkinter.StringVar()
+        self.dir_entry = Tkinter.Entry(master=self, text=v)
+        v.set(experiment.img_path)
         self.dir_button = Tkinter.Button(
             master=self,
             text="...",
@@ -54,7 +57,18 @@ class AddExperiment(Tkinter.Toplevel):
         )
         self.species_var = Tkinter.StringVar(self)
         self.species = self.app.core.species_classes.keys()
-        self.species_var.set(list(self.species)[0])  # default value
+        spec_idx = 0
+        if experiment.species == 'brassica':
+            spec_idx = 0
+        elif experiment.species == 'corn':
+            spec_idx = 1
+        elif experiment.species == 'tomato':
+            spec_idx = 2
+        elif experiment.species == 'wheat':
+            spec_idx = 3
+        elif experiment.species == 'cereals':
+            spec_idx = 4
+        self.species_var.set(list(self.species)[spec_idx])  # default value
         self.species_options = Tkinter.OptionMenu(
             self,
             self.species_var,
@@ -68,7 +82,14 @@ class AddExperiment(Tkinter.Toplevel):
         )
         self.removers_var = Tkinter.StringVar(self)
         self.removers = ['GMM', 'SGD', 'UNet']
-        self.removers_var.set(self.removers[0])  # default value
+        bg_idx = 0
+        if experiment.bg_remover == 'GMM':
+            bg_idx = 0
+        elif experiment.bg_remover == 'SGD':
+            bg_idx = 1
+        elif experiment.bg_remover == 'UNet':
+            bg_idx = 2
+        self.removers_var.set(self.removers[bg_idx])  # default value
         self.bg_rm_options = Tkinter.OptionMenu(
             self,
             self.removers_var,
@@ -80,41 +101,51 @@ class AddExperiment(Tkinter.Toplevel):
             text="Number of panels: ",
             anchor=Tkinter.W
         )
-        self.panel_num_entry = Tkinter.Entry(master=self)
+        v = Tkinter.StringVar()
+        self.panel_num_entry = Tkinter.Entry(master=self, text=v)
+        v.set(experiment.panel_n)
 
         self.seeds_per_panel_row_label = Tkinter.Label(
             master=self,
             text="Rows: ",
             anchor=Tkinter.W
         )
-        self.seeds_per_panel_row_entry = Tkinter.Entry(master=self)
+        v = Tkinter.StringVar()
+        self.seeds_per_panel_row_entry = Tkinter.Entry(master=self, text=v)
+        v.set(experiment.seeds_row_n)
 
         self.seeds_per_panel_col_label = Tkinter.Label(
             master=self,
             text="Cols: ",
             anchor=Tkinter.W
         )
-        self.seeds_per_panel_col_entry = Tkinter.Entry(master=self)
+        v = Tkinter.StringVar()
+        self.seeds_per_panel_col_entry = Tkinter.Entry(master=self, text=v)
+        v.set(experiment.seeds_col_n)
 
         self.start_image_label = Tkinter.Label(
             master=self,
             text="Start image: ",
             anchor=Tkinter.W
         )
-        self.start_image_entry = Tkinter.Entry(master=self)
+        v = Tkinter.StringVar()
+        self.start_image_entry = Tkinter.Entry(master=self, text=v)
+        v.set(experiment.start_img)
         self.end_image_label = Tkinter.Label(
             master=self,
             text="End image: ",
             anchor=Tkinter.W
         )
-        self.end_image_entry = Tkinter.Entry(master=self)
+        v = Tkinter.StringVar()
+        self.end_image_entry = Tkinter.Entry(master=self, text=v)
+        v.set(experiment.end_img)
 
         self.use_colour_label = Tkinter.Label(
             master=self,
             text="Use Colour: ",
             anchor=Tkinter.W
         )
-        self.use_colour = Tkinter.IntVar(self)
+        self.use_colour = Tkinter.IntVar(self, value=experiment.use_colour)
         self.use_colour_box = Tkinter.Checkbutton(master=self, variable=self.use_colour)
 
         self.cancel_button = Tkinter.Button(
@@ -126,7 +157,7 @@ class AddExperiment(Tkinter.Toplevel):
 
         self.add_button = Tkinter.Button(
             master=self,
-            text="Add",
+            text="Confirm",
             command=self._add,
         )
 
@@ -345,8 +376,6 @@ class AddExperiment(Tkinter.Toplevel):
             (len(panel_n) < 1, "Need to enter the number of panels"),
             (len(seeds_col_n) < 1, "Need to enter the number of seeds per column"),
             (len(seeds_row_n) < 1, "Need to enter the number of seeds per row"),
-            (len(start_img) < 1, "Need to enter start image index"),
-            (len(end_img) < 1, "Need to enter end image index")
         ]
 
         if not self._warning_conditions(pre_conditions):
@@ -354,8 +383,6 @@ class AddExperiment(Tkinter.Toplevel):
             return
 
         post_conditions = [
-            (self.db.get(where("name") == name) is not None,
-             "Experiment with this name already exists"),
             (not os.path.exists(dir_), "Cannot find experiment directory"),
             (len(os.listdir(dir_)) < 1,
              "Directory does not contain any files"),
@@ -400,11 +427,11 @@ class AddExperiment(Tkinter.Toplevel):
                          bg_remover=bg_remover,
                          use_colour=use_colour,
                          panel_labelled=False,
-                         _yuv_ranges_set=False,
-                         _status="")
-        exp.create_directories()
-        exp.insert_into_database()
-        self.app.experiments.append(exp)
+                         _yuv_ranges_set=self.experiment._yuv_ranges_set,
+                         _status=self.experiment._status)
+
+        self.app._experiments[self.idx] = exp
+
 
         self.destroy()
         self.app._populate_experiment_table()

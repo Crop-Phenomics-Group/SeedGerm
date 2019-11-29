@@ -3,6 +3,7 @@
 
 import json
 import os
+import sys
 import tkinter as Tkinter
 
 import matplotlib.pyplot as plt
@@ -20,7 +21,7 @@ class MaskViewer(Tkinter.Toplevel):
         Tkinter.Toplevel.__init__(self)
         
         self.title("View masks")
-        self.iconbitmap('.\logo.ico')
+        self.iconbitmap(sys._MEIPASS + '.\logo.ico')
         
         self.exp = exp
 

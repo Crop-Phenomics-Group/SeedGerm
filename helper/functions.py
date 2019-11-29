@@ -128,9 +128,9 @@ def find_pts_in_range(pts, xy_range):
     in_mask = []
     for y, x in pts:
         in_mask = np.concatenate((in_mask,[bbPath.contains_point((x, y))]),axis=0)   
-    
-    print("Removed %d boundary seed(s) ..." % (sum(in_mask == False)))
-    
+
+    if sum(in_mask == False) > 0:
+        print("Removed %d boundary seed(s) ..." % (sum(in_mask == False)))
     return in_mask
 
 
@@ -274,15 +274,10 @@ def order_pts_lr_tb(pts, desired_pts, xy_range, cols, rows):
         seen.append(new_pt)
         ordered_pts.append(pts[new_pt])
 
-    print(len(seen))
-
     return seen
     
 
 def find_closest_n_points(pts, desired_pts):
-
-    print(pts.shape, desired_pts)
-
     ymed, xmed = np.median(pts, axis=0)
     ystd, xstd = pts.std(axis=0)
     alpha = 0.25

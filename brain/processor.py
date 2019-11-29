@@ -56,6 +56,8 @@ from keras.models import load_model
 from keras.optimizers import Adam
 from keras.utils import to_categorical
 from imageio import imread
+import warnings
+warnings.filterwarnings("ignore")
 
 # Enables ability to reproduce results
 np.random.seed(0)
@@ -203,7 +205,7 @@ class ImageProcessor(threading.Thread):
         out_f = pj(self.exp_images_dir, "init_img.jpg")
         if os.path.exists(out_f):
             return
-        img_01 = imread(pj(self.exp.img_path, img)) / 255.
+        img_01 = self.all_imgs_list[0] / 255.
         fig = plt.figure(dpi=600)
         plt.imshow(img_01)
         fig.savefig(out_f)
@@ -211,14 +213,14 @@ class ImageProcessor(threading.Thread):
 
     def _yuv_clip_image(self, img_f):
         # Returns a binary mask of an image using the manually set thresholds
-        img = imread(os.path.join(self.exp.img_path, img_f))
+        img = self.all_imgs_list[img_f]
         img_yuv = rgb2ycrcb(img)
         mask_img = in_range(img_yuv, self.yuv_low, self.yuv_high)
         return mask_img.astype(np.bool)
 
     def _yuv_clip_panel_image(self, img_f, p):
         # Returns a binary mask of an image of a panel using the individual panel thresholds
-        img = imread(os.path.join(self.exp.img_path, img_f))
+        img = self.all_imgs_list[img_f]
         img_yuv = rgb2ycrcb(img)
         self.yuv_panel_json_file = os.path.join(
             self.exp.exp_path,
@@ -237,7 +239,7 @@ class ImageProcessor(threading.Thread):
         mask_img = in_range(img_yuv, self.yuv_panel_low, self.yuv_panel_high)
         return mask_img.astype(np.bool)
 
-    def _extract_panels(self, img, chunk_no, chunk_reverse):
+    def _extract_panels(self, img, chunk_no, chunk_reverse, img_idx):
         # If panel data already exists, load it
         panel_data_f = os.path.join(self.exp_gzdata_dir, "panel_data.pkl")
         if os.path.exists(panel_data_f):
@@ -249,11 +251,11 @@ class ImageProcessor(threading.Thread):
                     print("pickle is broken")
 
         # Obtain binary mask using the set YUV thresholds
-        mask_img = self._yuv_clip_image(img)
+        mask_img = self._yuv_clip_image(img_idx)
         mask_img = remove_small_objects(
-            fill_border(mask_img, 10, fillval=False),
-            min_size=1024
-        )
+                   fill_border(mask_img, 10, fillval=False),
+                   min_size=1024
+                   )
         mask_img_cleaned_copy = mask_img.copy()
         mask_img = erosion(binary_fill_holes(mask_img), disk(7))
         obj_only_mask = np.logical_and(mask_img, np.logical_not(mask_img_cleaned_copy))
@@ -262,6 +264,8 @@ class ImageProcessor(threading.Thread):
         ordered_mask_img, n_panels = measurements.label(mask_img)
         # Returns region properties of each panel in a list
         rprops = regionprops(ordered_mask_img, coordinates='xy')
+        # Remove items which are unlikely to be real panels
+        rprops = [x for x in rprops if x.area > self.all_imgs_list[0].shape[0]*self.all_imgs_list[0].shape[1]/self.exp.panel_n/6]
 
         def get_mask_objects(idx, rp):
             tmp_mask = np.zeros(mask_img.shape)
@@ -269,43 +273,49 @@ class ImageProcessor(threading.Thread):
 
             both_mask = np.logical_and(obj_only_mask, tmp_mask)
             both_mask = remove_small_objects(both_mask)
-            fig, ax = plt.subplots(1, 2, figsize=(16, 8))
-            ax[0].imshow(tmp_mask)
-            ax[1].imshow(both_mask)
-            fig.savefig(pj(self.exp_images_dir, "mask_img_{}.jpg".format(idx)))
-            plt.close(fig)
             _, panel_object_count = measurements.label(both_mask)  # , return_num=True)
-            return panel_object_count
+            return panel_object_count, tmp_mask, both_mask
 
         rprops = [(rp, get_mask_objects(idx, rp)) for idx, rp in enumerate(rprops)]
+        rprops = [[item[0], item[1][0], item[1][1], item[1][2]] for idx, item in enumerate(rprops)]
         rprops = sorted(rprops, key=itemgetter(1), reverse=True)
 
         # Check the panel has seeds in it
-        panels = [(rp, rp.centroid[0], rp.centroid[1]) for rp, _ in rprops[:self.exp.panel_n]]
+        panels = [(rp, rp.centroid[0], rp.centroid[1], tmp, both) for rp, _, tmp, both in rprops[:self.exp.panel_n]]
 
         # Sort panels based on y first, then x
         panels = sorted(panels, key=itemgetter(1))
         panels = chunks(panels, chunk_no)
         panels = [sorted(p, key=itemgetter(2), reverse=chunk_reverse) for p in panels]
-        print(panels)
         panels = list(chain(*panels))
 
         # Set mask, where 1 is top left, 2 is top right, 3 is middle left, etc
         panel_list = []
+        tmp_list = []
+        both_list = []
         for idx in range(len(panels)):
-            rp, _, _ = panels[idx]
+            rp, _, _, tmp, both = panels[idx]
             new_mask = np.zeros(mask_img.shape)
             new_mask[ordered_mask_img == rp.label] = 1
             panel_list.append(Panel(idx + 1, new_mask.astype(np.bool), rp.centroid, rp.bbox))
+            tmp_list.append(tmp)
+            both_list.append(both)
+
         self.panel_list = panel_list
         self.rprops = rprops
+        for i in range(len(tmp_list)):
+            fig, ax = plt.subplots(1, 2, figsize=(16, 8))
+            ax[0].imshow(tmp_list[i])
+            ax[1].imshow(both_list[i])
+            fig.savefig(pj(self.exp_images_dir, "mask_img_{}.jpg".format(i + 1)))
+            plt.close(fig)
 
         with open(panel_data_f, "wb") as fh:
             pickle.dump(self.panel_list, fh)
 
     def _save_contour_image(self):
         fig = plt.figure(dpi=600)
-        img_01 = self.all_imgs_list[0]
+        img_01 = self.all_imgs_list[self.exp.start_img]
         # plt.imshow(img_01)
 
         img_full_mask = np.zeros(img_01.shape[:-1])
@@ -360,7 +370,6 @@ class ImageProcessor(threading.Thread):
         TCD = np.percentile(all_NCD, 99.75)
         return TCD
 
-
     def _train_gmm_clfs(self):
         print(self.exp.bg_remover, "train")
 
@@ -370,12 +379,10 @@ class ImageProcessor(threading.Thread):
                 self.classifiers = pickle.load(fh)
             return
 
-        curr_img = imread(pj(self.exp.img_path, self.imgs[self.exp.start_img])) / 255.
+        curr_img = self.all_imgs_list[self.exp.start_img] / 255.
 
-        curr_mask = self._yuv_clip_image(self.imgs[self.exp.start_img])
+        curr_mask = self._yuv_clip_image(self.exp.start_img)
 
-        print(curr_mask)
-        print(curr_mask[curr_mask is True])
         curr_mask = dilation(curr_mask, disk(2))
 
         bg_mask3 = np.dstack([np.logical_and(curr_mask, self.panels_mask)] * 3)
@@ -384,30 +391,24 @@ class ImageProcessor(threading.Thread):
         # Get all of the bg pixels
         bg_rgb_pixels = flatten_img(bg_rgb_pixels)
         bg_rgb_pixels = bg_rgb_pixels[bg_rgb_pixels.all(axis=1), :]
-        # X = bg_rgb_pixels
         bg_retain = int(bg_rgb_pixels.shape[0] * 0.1)
         bg_retain = random.choice(bg_rgb_pixels.shape[0], bg_retain, replace=True)
         X = bg_rgb_pixels[bg_retain, :]
 
         blue_E, blue_s = X.mean(axis=0), X.std(axis=0)
-        print(blue_E, blue_s)
 
         alpha = flatBD(X, blue_E, blue_s)
         a = np.sqrt(np.power(alpha - 1, 2) / X.shape[0])
         b = np.sqrt(np.power(flatCD(X, blue_E, blue_s), 2) / X.shape[0])
-        print(a, b)
 
         TCD = self._gmm_get_TCD(X, blue_E, blue_s, b)
-        print(TCD)
         print("Training GMM background remover...")
         bg_gmm = GaussianMixture(n_components=3, random_state=0)
         bg_gmm.fit(X)
 
         thresh = np.percentile(bg_gmm.score(X), 1.)
-        print(thresh)
 
         new_E = (bg_gmm.means_ * bg_gmm.weights_.reshape(1, bg_gmm.n_components).T).sum(axis=0)
-        print(new_E)
 
         self.classifiers = [bg_gmm, blue_E, blue_s, TCD, thresh, a, b, new_E]
 
@@ -429,11 +430,8 @@ class ImageProcessor(threading.Thread):
 
         # 2d array of all the masks that are indexed first by image, then by panel.
         self.all_masks = []
-        print(self.exp.start_img, self.exp.end_img)
         for idx in tqdm(range(self.exp.start_img, self.exp.end_img)):
-            img_f = self.imgs[idx]
-
-            img = imread(pj(self.exp.img_path, img_f)) / 255.
+            img = self.all_imgs_list[idx] / 255.
 
             img_masks = []
             # Generate the predicted mask for each panel and add them to the mask list.
@@ -501,11 +499,10 @@ class ImageProcessor(threading.Thread):
             # For each training image, training mask labels created using the yuv thresholds chosen at experiment setup,
             # training mask labels plotted in 4 x 4 figure
             for idx, img_i in enumerate(train_img_ids):
-                curr_img = imread(pj(self.exp.img_path, self.imgs[img_i]))[p.bbox[0]:p.bbox[2],
-                           p.bbox[1]:p.bbox[3]] / 255.       # Can probably speed up using self.all_imgs_list
+                curr_img = self.all_imgs_list[img_i][p.bbox[0]:p.bbox[2], p.bbox[1]:p.bbox[3]] / 255.
                 train_images.append(curr_img)
 
-                curr_mask = self._yuv_clip_panel_image(self.imgs[img_i], p.label)
+                curr_mask = self._yuv_clip_panel_image(img_i, p.label)
                 curr_mask = dilation(curr_mask, disk(2))
                 train_masks.append(curr_mask.astype(np.bool))
 
@@ -531,14 +528,11 @@ class ImageProcessor(threading.Thread):
                 fg_rgb_pixels = self._create_transformed_data(
                     curr_img * fg_mask3[p.bbox[0]:p.bbox[2], p.bbox[1]:p.bbox[3]])
 
-                print("Training background image shape: ", bg_rgb_pixels.shape)
                 all_bg_pixels.append(bg_rgb_pixels)
                 all_fg_pixels.append(fg_rgb_pixels)
 
             bg_rgb_pixels = np.vstack(all_bg_pixels)
             fg_rgb_pixels = np.vstack(all_fg_pixels)
-            print("Training background image shape: ", bg_rgb_pixels.shape, "Training foreground image shape: ",
-                  fg_rgb_pixels.shape)
 
             # Concatenate training data from all images, X contains RGB values corresponding to Y label values (0 being
             # background, 1 being foreground)
@@ -575,13 +569,13 @@ class ImageProcessor(threading.Thread):
         train_masks = []
 
         for idx, img_i in enumerate(train_img_ids):
-            curr_img = imread(pj(self.exp.img_path, self.imgs[img_i])) / 255.
+            curr_img = self.all_imgs_list[img_i] / 255.
             curr_img = resize(curr_img, (int(curr_img.shape[0] / 2), int(curr_img.shape[1] / 2)),
                               anti_aliasing=True)
             curr_img = np.expand_dims(curr_img, axis=0)
             train_images.append(curr_img)
 
-            curr_mask = self._yuv_clip_image(self.imgs[img_i])
+            curr_mask = self._yuv_clip_image(img_i)
             curr_mask = dilation(curr_mask, disk(2))
             curr_mask = resize(curr_mask, (int(curr_mask.shape[0] / 2), int(curr_mask.shape[1] / 2)),
                                anti_aliasing=True)
@@ -600,7 +594,7 @@ class ImageProcessor(threading.Thread):
                 panel_img = p.get_cropped_image(img)
                 panel_img = np.expand_dims(panel_img, axis=0)
                 panels_img.append(panel_img)
-                curr_mask = self._yuv_clip_image(self.imgs[img_i])
+                curr_mask = self._yuv_clip_image(img_i)
                 curr_mask = dilation(curr_mask, disk(2))
                 curr_mask = to_categorical(curr_mask, num_classes=2, dtype='uint8')
                 curr_mask = p.get_cropped_image(curr_mask)
@@ -783,9 +777,7 @@ class ImageProcessor(threading.Thread):
 
             # Label features in an array using the default structuring element which is a cross.
             labelled_array, num_features = measurements.label(mask_med)
-            print(num_features)
             rprops = regionprops(labelled_array, coordinates='xy')
-            print(len(rprops))
 
             all_seed_rprops = []  # type: List[SeedPanel]
             for rp in rprops:
@@ -804,7 +796,7 @@ class ImageProcessor(threading.Thread):
                     if im:
                         all_seed_rprops_new.append(rp)
                     else:
-                        # Remove false seed rprops from mask
+                        # Remove false seed rprops from mask, probably need to reorder after
                         labelled_array[labelled_array == rp.label] = 0
                 all_seed_rprops = all_seed_rprops_new
             # end if-----------------------------------#
@@ -855,7 +847,6 @@ class ImageProcessor(threading.Thread):
         for idx in tqdm(range(0, len(self.all_masks))):
             self.panel_l_rprops_1 = []
             fig, axarr = plt.subplots(self.exp.panel_n, 1, figsize=(16, 16 * self.exp.panel_n))
-            print(idx)
             for ipx, panel in enumerate(self.panel_list):
                 # :10 for tomato, :20 for corn/brassica
                 # mask_med = np.dstack([img_mask[idx] for img_mask in init_masks])
@@ -864,7 +855,6 @@ class ImageProcessor(threading.Thread):
 
                 # Label features in an array using the default structuring element which is a cross.
                 labelled_array, num_features = measurements.label(mask_med)
-                print('Number of features: ', num_features)
                 rprops = regionprops(labelled_array, coordinates='xy')
                 print('Length of rprops: ', len(rprops))
 
@@ -885,28 +875,25 @@ class ImageProcessor(threading.Thread):
                 pts = np.vstack([el.centroid for el in all_seed_rprops])
                 in_mask = find_closest_n_points(pts, self.exp.seeds_n)
 
-                counter = 0
                 # If we've got less seeds than we should do, should we throw them away?
                 if len(in_mask) > self.exp.seeds_n:
                     all_seed_rprops_new = []
                     for rp, im in zip(all_seed_rprops, in_mask):
-                        if rp.area < 0.7 * np.percentile(minimum_areas[ipx], 10):
-                            print("Removed seed with area =", rp.area)
+                        if rp.area < 0.6 * np.percentile(minimum_areas[ipx], 10):
+                            print("Removed object with area =", rp.area)
                             labelled_array[labelled_array == rp.label] = 0
-                            counter += 1
+                            labelled_array[labelled_array > rp.label] -= 1
                         elif im:
-                            rp.label = rp.label + counter
                             all_seed_rprops_new.append(rp)
                         else:
                             # Remove false seed rprops from mask
                             labelled_array[labelled_array == rp.label] = 0
+                            labelled_array[labelled_array > rp.label] -= 1
                     all_seed_rprops = all_seed_rprops_new
 
                 # end if-----------------------------------#
 
                 # Remove extra 'seeds' (QR labels) from boundary
-                if all_seed_rprops == []:
-                    print("STOP")
                 pts = np.vstack([el.centroid for el in all_seed_rprops])
                 xy_range = get_xy_range(labelled_array)
                 in_mask = find_pts_in_range(pts, xy_range)
@@ -1008,7 +995,6 @@ class ImageProcessor(threading.Thread):
 
         if len(glob.glob(pj(self.exp_results_dir, "germ_panel_*.json"))) >= self.exp.panel_n:
             print("Already analysed data")
-            # print "Continuing for testing..."
             return
 
         if self.all_masks is None:
@@ -1018,10 +1004,9 @@ class ImageProcessor(threading.Thread):
                 self.all_masks.append(data)
 
         # Evaluate each panel separately so that variance between genotypes doesn't worsen results
-        for panel_idx, panel_object in enumerate(self.panel_list):
+        print("Classifying seeds")
+        for panel_idx, panel_object in enumerate(tqdm(self.panel_list)):
             try:
-                print("panel %d" % panel_idx)
-
                 # This is the tuple of the labelled arrays generated from regionprops
                 panel_labels, panel_regionprops = self.panel_l_rprops[panel_idx]
                 p_masks = []
@@ -1039,8 +1024,6 @@ class ImageProcessor(threading.Thread):
                     p_masks,
                     self.all_imgs_list[self.exp.start_img:self.exp.end_img]
                 )
-
-                print("panel germ length " + str(len(panel_germ)))
 
                 out_f = pj(
                     self.exp_results_dir,
@@ -1062,8 +1045,8 @@ class ImageProcessor(threading.Thread):
             idx = 0
             while idx < (curr_seed.shape[0] - win):
                 if curr_seed[idx:idx + win].all():
-                    curr_seed[:idx - 1] = 0
-                    curr_seed[idx - 1:] = 1
+                    curr_seed[:idx + win - 1] = 0
+                    curr_seed[idx + win - 1:] = 1
                     break
                 idx += 1
             if idx >= (curr_seed.shape[0] - win):
@@ -1094,7 +1077,6 @@ class ImageProcessor(threading.Thread):
             l, rprop = self.all_rprops[0][i]
             p_totals.append(len(rprop))
 
-        print(len(all_germ))
         if len(all_germ) == 0:
             raise Exception("Germinated seeds found is 0. Try changing YUV values.")
 
@@ -1105,9 +1087,7 @@ class ImageProcessor(threading.Thread):
         np.save(self.exp_results_dir + '/all_germ.npy', all_germ)
 
         for germ in all_germ:
-            cum_germ_data.append(self._get_cumulative_germ(germ, win=1)[0])
-
-        # initial_germ_time_data = self._get_cumulative_germ(germ, win=1)[2]
+            cum_germ_data.append(self._get_cumulative_germ(germ, win=4)[0])
 
         initial_germ_time_data = []
 
@@ -1126,8 +1106,6 @@ class ImageProcessor(threading.Thread):
             cum_germ_data[i] = pd.Series(cum_germ_data[i])
 
         cum_germ_data = pd.concat(cum_germ_data, axis=1).astype('f')
-
-        print(len(cum_germ_data))
 
         fig, ((ax1, ax2), (ax3, ax4)) = plt.subplots(2, 2, figsize=(12., 10.))
 
@@ -1273,8 +1251,6 @@ class ImageProcessor(threading.Thread):
             df.columns = [str(i) for i in range(1, self.exp.panel_n + 1)]
             df.loc['Total seeds', :] = p_totals
 
-        # print(df.columns)
-
         df.to_csv(pj(
             self.exp_results_dir,
             "panel_germinated_cumulative.csv"
@@ -1299,10 +1275,10 @@ class ImageProcessor(threading.Thread):
         if has_date:
             start_dt = s_to_datetime(self.imgs[0])
 
-        img_f = imread(self.all_imgs[self.exp.start_img])
+        img_f = self.all_imgs_list[self.exp.start_img]
         f_masks = np.load(self.exp_masks_dir_frame % (self.exp.start_img), allow_pickle=True)
 
-        img_l = imread(self.all_imgs[-1])
+        img_l = self.all_imgs_list[self.exp.end_img-1]
         l_masks = np.load(self.exp_masks_dir_frame % ((self.exp.end_img - self.exp.start_img) - 1), allow_pickle=True)
 
         all_panel_data = []
@@ -1476,7 +1452,7 @@ class ImageProcessor(threading.Thread):
             try:
                 self._save_init_image(self.imgs[self.exp.start_img])
 
-                self._extract_panels(self.imgs[self.exp.start_img], self.core.chunk_no, self.core.chunk_reverse)
+                self._extract_panels(self.imgs[self.exp.start_img], self.core.chunk_no, self.core.chunk_reverse, self.exp.start_img)
 
                 self.app.status_string.set("Saving contour image")
 
@@ -1490,7 +1466,7 @@ class ImageProcessor(threading.Thread):
                     self._train_unet()
                 elif self.exp.bg_remover == "SGD":
                     # Define stochastic gradient descent classifier's hyperparameters
-                    self._train_clfs([("sgd", SGDClassifier(max_iter=10, random_state=0, verbose=2))])
+                    self._train_clfs([("sgd", SGDClassifier(max_iter=20, random_state=0, verbose=2))])
                     self.app.status_string.set("Removing background")
                     self._remove_background()
                 elif self.exp.bg_remover == "GMM":

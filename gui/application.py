@@ -16,6 +16,7 @@ import _thread
 from helper.functions import get_images_from_dir
 from gui.paneltool import PanelTool
 from gui.addexperiment import AddExperiment
+from gui.editexperiment import EditExperiment
 from gui.imageviewer import ImageViewer
 from gui.viewresults import ViewResults
 from gui.yuvranges import YUVRanges, YUVPanelRanges
@@ -23,6 +24,8 @@ from gui.aboutwindow import AboutWindow
 from gui.maskviewer import MaskViewer
 from gui.germinationviewer import GerminationViewer
 from helper.experiment import Experiment
+import warnings
+warnings.filterwarnings("ignore")
 
 
 class Application(Tkinter.Tk):
@@ -34,7 +37,6 @@ class Application(Tkinter.Tk):
         self.protocol("WM_DELETE_WINDOW", self._quit)
         self.title("SeedGerm - Beta Release")
         self.resizable(width=False, height=False)
-        # self.iconbitmap(sys._MEIPASS + '.\logo.ico')
         self.iconbitmap('.\logo.ico')
         self.exp_treeview_ids = {}
         self._experiments = None
@@ -165,7 +167,7 @@ class Application(Tkinter.Tk):
             ('command', 'Save results', self._save_results),
             ('command', 'Save masks', self._save_masks),
             ('separator', None, None),
-#            ('command', 'Edit', self._edit_exp),
+            ('command', 'Edit', self._edit_exp),
             ('command', 'Reset', self._reset_exp),
             ('separator', None, None),
             ('command', 'Delete', self._del_exp),
@@ -270,6 +272,11 @@ class Application(Tkinter.Tk):
         index = self.treeview.index(item)
         return self.experiments[index]
 
+    def _get_exp_idx(self):
+        item = self.treeview.selection()
+        index = self.treeview.index(item)
+        return index
+
     def _set_yuv_ranges(self):
         exp = self._get_exp()
         self.yuv_ranges = YUVRanges(self, exp)
@@ -280,7 +287,8 @@ class Application(Tkinter.Tk):
 
     def _process_images(self):
         exp = self._get_exp()
-
+        eid = self._get_exp_idx() + 1
+        exp._eid = eid
 
 
         # If the user hasn't labelled panels for this experiment we can't
@@ -342,8 +350,10 @@ class Application(Tkinter.Tk):
 #        print exp
 #        self.panel_tool = PanelTool(exp)
 
-#    def _edit_exp(self):
-#        print "edit exp"
+    def _edit_exp(self):
+        exp = self._get_exp()
+        idx = self._get_exp_idx()
+        self.add_experiment = EditExperiment(self, exp, idx)
 
     #this destroys the experiment path of data. but keeps the experiment.
     # will need to remake all the YUVs everything.
