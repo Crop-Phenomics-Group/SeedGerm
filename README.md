@@ -52,5 +52,4 @@ If you wish to run SeedGerm from the code, you will need to set up Python on you
 
 Please see the README.txt file that is included in this repository. 
 
-We have a Windows .exe file you can download. You can use it to analyse the sample images
-found in the repository's testing_images/ folder.
+We have a Windows .exe file you can download.
