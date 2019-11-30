@@ -12,4 +12,4 @@ class GerminationViewer(MaskViewer):
         MaskViewer.__init__(self, exp)
         
         self.title("Lal")
-        self.iconbitmap(sys._MEIPASS + '.\logo.ico')
+        self.iconbitmap('logo.ico')

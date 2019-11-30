@@ -27,8 +27,7 @@ class Core(threading.Thread):
         self._load_config_json()
 
     def _load_config_json(self):
-        # data = json.load(open("config.json"))
-        data = json.load(open('.\config.json'))
+        data = json.load(open('config.json'))
         self.chunk_no = data["chunk_no"]
         self.chunk_reverse = data["chunk_reverse"]
         self.proportions = data["proportions"]

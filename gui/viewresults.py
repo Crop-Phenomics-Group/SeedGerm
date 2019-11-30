@@ -20,14 +20,14 @@ class ViewResults(Tk.Toplevel):
     def __init__(self, exp):
         Tk.Toplevel.__init__(self)
 
-        self.iconbitmap(sys._MEIPASS + '.\logo.ico')
+        self.iconbitmap('logo.ico')
 
         self.exp = exp #type: Experiment
         self.exp_results_graph = pj(self.exp.get_results_dir(), "results.jpg")
         
         self.graph_img = imread(self.exp_results_graph)
 
-        self.fig = plt.Figure(facecolor='white', figsize=(10., 8.))
+        self.fig = plt.Figure(facecolor='white', figsize=(10., 8.), dpi=500)
         
         self.ax = self.fig.add_subplot(111)
         self.ax.imshow(self.graph_img)

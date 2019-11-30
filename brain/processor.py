@@ -190,7 +190,7 @@ class ImageProcessor(threading.Thread):
 
         try:
             self.spp_processor = copy.deepcopy(self.core.species_classes[
-                                                   self.exp.species.lower()])
+                                                   self.exp.species])
         except KeyError:
             print("No species module found for %s" % (self.exp.species))
             print("ought to use default, shouldn't occur as populate species list from these modules")
@@ -305,6 +305,7 @@ class ImageProcessor(threading.Thread):
         self.rprops = rprops
         for i in range(len(tmp_list)):
             fig, ax = plt.subplots(1, 2, figsize=(16, 8))
+            fig.suptitle('Mask for panel {}'.format(i + 1))
             ax[0].imshow(tmp_list[i])
             ax[1].imshow(both_list[i])
             fig.savefig(pj(self.exp_images_dir, "mask_img_{}.jpg".format(i + 1)))
@@ -362,7 +363,6 @@ class ImageProcessor(threading.Thread):
         A = np.sum((X * E) / np.power(s, 2), axis=1)
         B = np.sum(np.power(E / s, 2))
         alpha = A / B
-        print(alpha)
 
         alpha_tiled = np.repeat(alpha.reshape(alpha.shape[0], 1), 3, axis=1)
         inner = np.power((X - (E * alpha_tiled)) / s, 2)
@@ -371,8 +371,6 @@ class ImageProcessor(threading.Thread):
         return TCD
 
     def _train_gmm_clfs(self):
-        print(self.exp.bg_remover, "train")
-
         gmm_clf_f = pj(self.exp_gzdata_dir, "gmm_clf.pkl")
         if os.path.exists(gmm_clf_f):
             with open(gmm_clf_f, 'rb') as fh:
@@ -416,14 +414,10 @@ class ImageProcessor(threading.Thread):
             pickle.dump(self.classifiers, fh)
 
     def _gmm_remove_background(self):
-
-        print(self.exp.bg_remover, "remove")
-
         if len(os.listdir(self.exp_masks_dir)) >= ((self.exp.end_img - self.exp.start_img) - self.exp.start_img):
             return
 
         bg_gmm, blue_E, blue_s, TCD, thresh, a, b, new_E = self.classifiers
-        print(bg_gmm)
 
         if len(os.listdir(self.exp_masks_dir)) >= (self.exp.end_img - self.exp.start_img):
             return
@@ -468,11 +462,11 @@ class ImageProcessor(threading.Thread):
         return y_pred
 
     def _train_clfs(self, clf_in):
+        print("Classifier: ", self.exp.bg_remover)
         self.classifiers = []
         # For each panel in the list of panels, create training data then train the defined classifier
         for p in self.panel_list:
-            print("Classifier: ", self.exp.bg_remover)
-            print("Training clf_{}".format(p.label))
+            print("Training classifier for panel {}".format(p.label))
 
             # Attempt to load classifiers if they already exist
             ensemble_clf_f = pj(self.exp_gzdata_dir, "ensemble_clf_{}.pkl".format(p.label))
@@ -486,6 +480,7 @@ class ImageProcessor(threading.Thread):
 
             # 4 x 4 figure defined, each subplot will show one training mask
             fig, axarr = plt.subplots(4, 4)
+            fig.suptitle('Training images for panel {}'.format(p.label))
             axarr = list(chain(*axarr))
 
             train_masks = []
@@ -502,7 +497,7 @@ class ImageProcessor(threading.Thread):
                 curr_img = self.all_imgs_list[img_i][p.bbox[0]:p.bbox[2], p.bbox[1]:p.bbox[3]] / 255.
                 train_images.append(curr_img)
 
-                curr_mask = self._yuv_clip_panel_image(img_i, p.label)
+                curr_mask = self._yuv_clip_panel_image(img_i, p.label)[p.bbox[0]:p.bbox[2], p.bbox[1]:p.bbox[3]]
                 curr_mask = dilation(curr_mask, disk(2))
                 train_masks.append(curr_mask.astype(np.bool))
 
@@ -520,13 +515,13 @@ class ImageProcessor(threading.Thread):
             # and append to a list of all RGB values at foreground locations as well as a list of all RGB values
             # at background locations
             for idx, (mask, curr_img) in enumerate(zip(train_masks, train_images)):
-                bg_mask3 = np.dstack([np.logical_and(mask, self.panels_mask)] * 3)
-                fg_mask3 = np.dstack([np.logical_and(np.logical_not(mask), self.panels_mask)] * 3)
+                bg_mask3 = np.dstack([np.logical_and(mask, self.panels_mask[p.bbox[0]:p.bbox[2], p.bbox[1]:p.bbox[3]])] * 3)
+                fg_mask3 = np.dstack([np.logical_and(np.logical_not(mask), self.panels_mask[p.bbox[0]:p.bbox[2], p.bbox[1]:p.bbox[3]])] * 3)
 
                 bg_rgb_pixels = self._create_transformed_data(
-                    curr_img * bg_mask3[p.bbox[0]:p.bbox[2], p.bbox[1]:p.bbox[3]])
+                    curr_img * bg_mask3)
                 fg_rgb_pixels = self._create_transformed_data(
-                    curr_img * fg_mask3[p.bbox[0]:p.bbox[2], p.bbox[1]:p.bbox[3]])
+                    curr_img * fg_mask3)
 
                 all_bg_pixels.append(bg_rgb_pixels)
                 all_fg_pixels.append(fg_rgb_pixels)
@@ -666,7 +661,6 @@ class ImageProcessor(threading.Thread):
 
         # Fit classifier on training data, print train and test accuracy scores
         for clf_n, clf in clf_in:
-            print("Classifier: ", clf_n)
             clf.fit(X_train, y_train)
             print(clf_n, " train score: ", clf.score(X_train, y_train))
             print(clf_n, " test score: ", clf.score(X_test, y_test))
@@ -768,7 +762,7 @@ class ImageProcessor(threading.Thread):
                 init_masks.append(data)
         self.panel_l_rprops = []
 
-        for idx, panel in enumerate(tqdm(self.panel_list)):
+        for idx, panel in enumerate(self.panel_list):
 
             # :10 for tomato, :20 for corn/brassica
             mask_med = np.dstack([img_mask[idx] for img_mask in init_masks])
@@ -823,8 +817,6 @@ class ImageProcessor(threading.Thread):
 
             pts_order = order_pts_lr_tb(pts, self.exp.seeds_n, xy_range, self.exp.seeds_col_n, self.exp.seeds_row_n)
 
-            print("all seed rprops length: " + str(len(all_seed_rprops)))
-
             new_order = []
             new_mask = np.zeros(labelled_array.shape)
             for s_idx, s in enumerate(pts_order):
@@ -838,7 +830,6 @@ class ImageProcessor(threading.Thread):
             labelled_array = new_mask
 
             # We add an array of labels and the region proprties for each panel.
-            print("all seed rprops length: " + str(len(all_seed_rprops)))
             self.panel_l_rprops.append((labelled_array, all_seed_rprops))
 
         minimum_areas = []
@@ -856,7 +847,6 @@ class ImageProcessor(threading.Thread):
                 # Label features in an array using the default structuring element which is a cross.
                 labelled_array, num_features = measurements.label(mask_med)
                 rprops = regionprops(labelled_array, coordinates='xy')
-                print('Length of rprops: ', len(rprops))
 
                 all_seed_rprops = []  # type: List[SeedPanel]
                 for rp in rprops:
@@ -880,7 +870,7 @@ class ImageProcessor(threading.Thread):
                     all_seed_rprops_new = []
                     for rp, im in zip(all_seed_rprops, in_mask):
                         if rp.area < 0.6 * np.percentile(minimum_areas[ipx], 10):
-                            print("Removed object with area =", rp.area)
+                            print("Removed object with area =" + str(rp.area))
                             labelled_array[labelled_array == rp.label] = 0
                             labelled_array[labelled_array > rp.label] -= 1
                         elif im:
@@ -899,15 +889,15 @@ class ImageProcessor(threading.Thread):
                 in_mask = find_pts_in_range(pts, xy_range)
 
                 # If we've got more seeds than we should do, should we throw them away?
-                if len(in_mask) > self.exp.seeds_n:
-                    all_seed_rprops_new = []
-                    for rp, im in zip(all_seed_rprops, in_mask):
-                        if im:
-                            all_seed_rprops_new.append(rp)
-                        else:
-                            # Remove false seed rprops from mask
-                            labelled_array[labelled_array == rp.label] = 0
-                    all_seed_rprops = all_seed_rprops_new
+                # if len(in_mask) > self.exp.seeds_n:
+                #     all_seed_rprops_new = []
+                #     for rp, im in zip(all_seed_rprops, in_mask):
+                #         if im:
+                #             all_seed_rprops_new.append(rp)
+                #         else:
+                #             # Remove false seed rprops from mask
+                #             labelled_array[labelled_array == rp.label] = 0
+                #     all_seed_rprops = all_seed_rprops_new
                 # end if-----------------------------------#
 
                 # Need to update pts if we have pruned.
@@ -928,7 +918,7 @@ class ImageProcessor(threading.Thread):
                 labelled_array = new_mask
 
                 # We add an array of labels and the region properties for each panel.
-                print("Number of seeds identified: " + str(len(all_seed_rprops)))
+                print("Number of seeds identified in panel {}: ".format(panel.label) + str(len(all_seed_rprops)))
                 self.panel_l_rprops_1.append((labelled_array, all_seed_rprops))
                 if self.exp.panel_n > 1:
                     axarr[ipx].imshow(mask_med)
@@ -992,6 +982,7 @@ class ImageProcessor(threading.Thread):
         """ Also need to quantify whether the seed merges, and whether it has 
         moved.
         """
+        print("Classifying seeds")
 
         if len(glob.glob(pj(self.exp_results_dir, "germ_panel_*.json"))) >= self.exp.panel_n:
             print("Already analysed data")
@@ -1004,7 +995,6 @@ class ImageProcessor(threading.Thread):
                 self.all_masks.append(data)
 
         # Evaluate each panel separately so that variance between genotypes doesn't worsen results
-        print("Classifying seeds")
         for panel_idx, panel_object in enumerate(tqdm(self.panel_list)):
             try:
                 # This is the tuple of the labelled arrays generated from regionprops
@@ -1015,6 +1005,7 @@ class ImageProcessor(threading.Thread):
                     p_masks.append(self.all_masks[i][panel_idx])
 
                 self.spp_processor.use_colour = self.exp.use_colour
+                self.spp_processor.use_delta = self.exp.use_delta
 
                 panel_germ = self.spp_processor._classify(
                     panel_object,
@@ -1107,7 +1098,9 @@ class ImageProcessor(threading.Thread):
 
         cum_germ_data = pd.concat(cum_germ_data, axis=1).astype('f')
 
-        fig, ((ax1, ax2), (ax3, ax4)) = plt.subplots(2, 2, figsize=(12., 10.))
+        fig, ((ax1, ax2), (ax3, ax4)) = plt.subplots(2, 2,
+                                                     figsize=(18., 15.),
+                                                     dpi=650)
 
         fig.suptitle(self.exp.name)
 
@@ -1466,7 +1459,7 @@ class ImageProcessor(threading.Thread):
                     self._train_unet()
                 elif self.exp.bg_remover == "SGD":
                     # Define stochastic gradient descent classifier's hyperparameters
-                    self._train_clfs([("sgd", SGDClassifier(max_iter=20, random_state=0, verbose=2))])
+                    self._train_clfs([("SGD", SGDClassifier(max_iter=50, random_state=0, tol=1e-5))])
                     self.app.status_string.set("Removing background")
                     self._remove_background()
                 elif self.exp.bg_remover == "GMM":

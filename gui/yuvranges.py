@@ -151,9 +151,9 @@ class YUVRanges(Tkinter.Toplevel):
         self.img_plot2 = self.ax2.imshow(img_03)
         self.img_plot3 = self.ax3.imshow(img_04)
 
-        self.y_label = Tkinter.Label(master=self, text="Y")
-        self.u_label = Tkinter.Label(master=self, text="U")
-        self.v_label = Tkinter.Label(master=self, text="V")
+        self.y_label = Tkinter.Label(master=self, text="Y", font=(None, 15))
+        self.u_label = Tkinter.Label(master=self, text="U", font=(None, 15))
+        self.v_label = Tkinter.Label(master=self, text="V", font=(None, 15))
 
         scale_length = 255
 
@@ -162,6 +162,7 @@ class YUVRanges(Tkinter.Toplevel):
             label="Low",
             from_=0,
             to=255,
+            font=(None, 11),
             orient=Tkinter.HORIZONTAL,
             length=scale_length,
             command=self._handle_slide
@@ -171,6 +172,7 @@ class YUVRanges(Tkinter.Toplevel):
             label="High",
             from_=0,
             to=255,
+            font=(None, 11),
             orient=Tkinter.HORIZONTAL,
             length=scale_length,
             command=self._handle_slide
@@ -181,6 +183,7 @@ class YUVRanges(Tkinter.Toplevel):
             label="Low",
             from_=0,
             to=255,
+            font=(None, 11),
             orient=Tkinter.HORIZONTAL,
             length=scale_length,
             command=self._handle_slide
@@ -190,6 +193,7 @@ class YUVRanges(Tkinter.Toplevel):
             label="High",
             from_=0,
             to=255,
+            font=(None, 11),
             orient=Tkinter.HORIZONTAL,
             length=scale_length,
             command=self._handle_slide
@@ -200,6 +204,7 @@ class YUVRanges(Tkinter.Toplevel):
             label="Low",
             from_=0,
             to=255,
+            font=(None, 11),
             orient=Tkinter.HORIZONTAL,
             length=scale_length,
             command=self._handle_slide
@@ -209,6 +214,7 @@ class YUVRanges(Tkinter.Toplevel):
             label="High",
             from_=0,
             to=255,
+            font=(None, 11),
             orient=Tkinter.HORIZONTAL,
             length=scale_length,
             command=self._handle_slide
@@ -501,9 +507,9 @@ class YUVPanelRanges(Tkinter.Toplevel):
             self.img_plot2 = self.ax2.imshow(img_03)
             self.img_plot3 = self.ax3.imshow(img_04)
 
-            self.y_label = Tkinter.Label(master=self, text="Y")
-            self.u_label = Tkinter.Label(master=self, text="U")
-            self.v_label = Tkinter.Label(master=self, text="V")
+            self.y_label = Tkinter.Label(master=self, text="Y", font=(None, 15))
+            self.u_label = Tkinter.Label(master=self, text="U", font=(None, 15))
+            self.v_label = Tkinter.Label(master=self, text="V", font=(None, 15))
 
             scale_length = 255
 
@@ -512,6 +518,7 @@ class YUVPanelRanges(Tkinter.Toplevel):
                 label="Low",
                 from_=0,
                 to=255,
+                font=(None, 11),
                 orient=Tkinter.HORIZONTAL,
                 length=scale_length,
                 command=self._handle_slide
@@ -521,6 +528,7 @@ class YUVPanelRanges(Tkinter.Toplevel):
                 label="High",
                 from_=0,
                 to=255,
+                font=(None, 11),
                 orient=Tkinter.HORIZONTAL,
                 length=scale_length,
                 command=self._handle_slide
@@ -531,6 +539,7 @@ class YUVPanelRanges(Tkinter.Toplevel):
                 label="Low",
                 from_=0,
                 to=255,
+                font=(None, 11),
                 orient=Tkinter.HORIZONTAL,
                 length=scale_length,
                 command=self._handle_slide
@@ -540,6 +549,7 @@ class YUVPanelRanges(Tkinter.Toplevel):
                 label="High",
                 from_=0,
                 to=255,
+                font=(None, 11),
                 orient=Tkinter.HORIZONTAL,
                 length=scale_length,
                 command=self._handle_slide
@@ -550,6 +560,7 @@ class YUVPanelRanges(Tkinter.Toplevel):
                 label="Low",
                 from_=0,
                 to=255,
+                font=(None, 11),
                 orient=Tkinter.HORIZONTAL,
                 length=scale_length,
                 command=self._handle_slide
@@ -559,6 +570,7 @@ class YUVPanelRanges(Tkinter.Toplevel):
                 label="High",
                 from_=0,
                 to=255,
+                font=(None, 11),
                 orient=Tkinter.HORIZONTAL,
                 length=scale_length,
                 command=self._handle_slide

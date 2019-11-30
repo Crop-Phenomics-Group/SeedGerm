@@ -21,7 +21,7 @@ class MaskViewer(Tkinter.Toplevel):
         Tkinter.Toplevel.__init__(self)
         
         self.title("View masks")
-        self.iconbitmap(sys._MEIPASS + '.\logo.ico')
+        self.iconbitmap('logo.ico')
         
         self.exp = exp
 

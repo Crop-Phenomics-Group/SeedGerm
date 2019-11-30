@@ -6,6 +6,7 @@ import sys
 import tkinter as Tkinter
 from tkinter import filedialog
 from tkinter import messagebox
+from tinydb import where
 from helper.functions import slugify, get_images_from_dir
 from helper.experiment import Experiment
 
@@ -58,15 +59,15 @@ class EditExperiment(Tkinter.Toplevel):
         self.species_var = Tkinter.StringVar(self)
         self.species = self.app.core.species_classes.keys()
         spec_idx = 0
-        if experiment.species == 'brassica':
+        if experiment.species == 'Brassica':
             spec_idx = 0
-        elif experiment.species == 'corn':
+        elif experiment.species == 'Corn':
             spec_idx = 1
-        elif experiment.species == 'tomato':
+        elif experiment.species == 'Tomato':
             spec_idx = 2
-        elif experiment.species == 'wheat':
+        elif experiment.species == 'Wheat':
             spec_idx = 3
-        elif experiment.species == 'cereals':
+        elif experiment.species == 'Cereals':
             spec_idx = 4
         self.species_var.set(list(self.species)[spec_idx])  # default value
         self.species_options = Tkinter.OptionMenu(
@@ -116,7 +117,7 @@ class EditExperiment(Tkinter.Toplevel):
 
         self.seeds_per_panel_col_label = Tkinter.Label(
             master=self,
-            text="Cols: ",
+            text="Columns: ",
             anchor=Tkinter.W
         )
         v = Tkinter.StringVar()
@@ -142,11 +143,19 @@ class EditExperiment(Tkinter.Toplevel):
 
         self.use_colour_label = Tkinter.Label(
             master=self,
-            text="Use Colour: ",
+            text="Use colour: ",
             anchor=Tkinter.W
         )
         self.use_colour = Tkinter.IntVar(self, value=experiment.use_colour)
         self.use_colour_box = Tkinter.Checkbutton(master=self, variable=self.use_colour)
+
+        self.use_delta_features = Tkinter.Label(
+            master=self,
+            text="Use delta features: ",
+            anchor=Tkinter.W
+        )
+        self.use_delta = Tkinter.IntVar(self, value=experiment.use_delta)
+        self.use_delta_box = Tkinter.Checkbutton(master=self, variable=self.use_delta)
 
         self.cancel_button = Tkinter.Button(
             master=self,
@@ -312,6 +321,21 @@ class EditExperiment(Tkinter.Toplevel):
             sticky='ew'
         )
 
+        self.use_delta_features.grid(
+            in_=self,
+            column=3,
+            row=12,
+            sticky='news'
+        )
+
+        self.use_delta_box.grid(
+            in_=self,
+            column=4,
+            columnspan=1,
+            row=12,
+            sticky='ew'
+        )
+
         self.cancel_button.grid(
             in_=self,
             column=2,
@@ -370,6 +394,7 @@ class EditExperiment(Tkinter.Toplevel):
         if len(start_img) < 1:
             start_img = '-1'
         use_colour = self.use_colour.get()
+        use_delta = self.use_delta.get()
         pre_conditions = [
             (len(name) < 1, "Experiment name is too short"),
             (len(dir_) < 1, "Need to enter a directory"),
@@ -382,7 +407,16 @@ class EditExperiment(Tkinter.Toplevel):
             self.app.lift()
             return
 
+        name_cond = False
+        for i in range(len(self.master._experiments)):
+            if self.idx == i:
+                continue
+            if self.master._experiments[i].name == name:
+                name_cond = True
+
         post_conditions = [
+            (name_cond,
+             "Experiment with this name already exists"),
             (not os.path.exists(dir_), "Cannot find experiment directory"),
             (len(os.listdir(dir_)) < 1,
              "Directory does not contain any files"),
@@ -426,10 +460,13 @@ class EditExperiment(Tkinter.Toplevel):
                          end_img=end_img,
                          bg_remover=bg_remover,
                          use_colour=use_colour,
+                         use_delta=use_delta,
                          panel_labelled=False,
                          _yuv_ranges_set=self.experiment._yuv_ranges_set,
                          _status=self.experiment._status)
 
+        exp._eid = self.app._experiments[self.idx]._eid
+        exp.eid = self.app._experiments[self.idx].eid
         self.app._experiments[self.idx] = exp
 
 

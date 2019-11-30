@@ -9,33 +9,33 @@
 	"seeds" :
 	[
 	{
-		"seed":"brassica",
+		"seed":"Brassica",
 		"seed_pix_n":50,
 		"spp_mask_dilate":3,
 		"germ_true_width":7
 	},
 	{
-		"seed":"corn",
+		"seed":"Corn",
 		"seed_pix_n":80,
 		"spp_mask_dilate":4,
 		"germ_true_width":5,
 		"area_growth_min":1.2
 	},
 	{
-		"seed":"tomato",
+		"seed":"Tomato",
 		"seed_pix_n":50,
       "spp_mask_dilate": 3,
       "germ_true_width": 5
     },
       {
-        "seed": "wheat",
+        "seed": "Wheat",
         "seed_pix_n": 70,
         "spp_mask_dilate": 3,
         "germ_true_width": 7,
         "area_growth_min": 2.5
       },
       {
-        "seed": "cereals",
+        "seed": "Cereals",
         "seed_pix_n": 70,
 		"spp_mask_dilate":3,
 		"germ_true_width":7

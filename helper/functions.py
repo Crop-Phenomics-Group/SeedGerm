@@ -24,12 +24,9 @@ pj = os.path.join
 
 
 def check_files_have_date(f_name):
-    print(f_name)
-
     #JIC filename check
     re_result = re.findall("Date-([\d\-\_]+).", f_name)
     if re_result:
-        print("Found JIC file name")
         try:
             time.strptime(re_result[0], "%d-%m-%Y_%H-%M")
             return True
@@ -41,8 +38,6 @@ def check_files_have_date(f_name):
     #     try:
     #         time.strptime(re_result[0], "%d-%m-%Y_%H-%M")
     #     except:
-
-    print()
     return False
 
 
@@ -130,7 +125,7 @@ def find_pts_in_range(pts, xy_range):
         in_mask = np.concatenate((in_mask,[bbPath.contains_point((x, y))]),axis=0)   
 
     if sum(in_mask == False) > 0:
-        print("Removed %d boundary seed(s) ..." % (sum(in_mask == False)))
+        print("Removed %d boundary seed(s)" % (sum(in_mask == False)))
     return in_mask
 
 
@@ -309,8 +304,8 @@ def find_closest_n_points(pts, desired_pts):
         
         _iter += 1
         
-        if _iter >= 20:
-            print("Converged without finding exact number of seeds...")
+        if _iter >= 30:
+            print("Converged without finding exact number of seeds")
             break
             
     return in_mask
@@ -414,9 +409,7 @@ def label_next_frame(prev_l, prev_rprops, panel):
 
             dist = np.sqrt(np.power(yx2 - yx1, 2).sum(axis=1))
             idx = np.argmin(dist)
-        
-        #print idx, idx2
-        
+
         new_curr_l[curr_l == curr_rprops[idx].label] = rp1.label
         new_curr_l = new_curr_l.astype(np.int)
         
@@ -424,7 +417,6 @@ def label_next_frame(prev_l, prev_rprops, panel):
      
     for i in range(1,len(assigned)):
         if len(assigned[i]) > 1:
-            #print assigned[i], i
             new_curr_l = separate_seeds(new_curr_l, prev_l, assigned[i], (curr_l == i))
 
     new_rprops = regionprops(new_curr_l)  #, coordinates="xy")
@@ -463,12 +455,9 @@ def separate_seeds(curr_l, prev_l, indexes, curr_mask):
     
     count = 1
     
-    #print'\t', s_lm, '\t', markers.ravel().max(), '\t', labels.ravel().max()
-    
+
     for i in range(len(indexes)):
-        #print 'i = ', i
         for j in range(count, s_lm[i]+count):
-            #print 'j = ' , j
             curr_l[labels == j] = indexes[i]
             
         count = count + s_lm[i]

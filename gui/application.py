@@ -115,30 +115,30 @@ class Application(Tkinter.Tk):
         )
 
         self.treeview.grid(
-            in_ = self,
-            column = 1,
-            row = 1,
+            in_=self,
+            column=1,
+            row=1,
             sticky='news'
         )
         self.vsb_1.grid(
-            in_ = self,
-            column = 2,
-            row = 1,
-            sticky = 'news'
+            in_=self,
+            column=2,
+            row=1,
+            sticky='news'
         )
         self.hsb_1.grid(
-            in_ = self,
-            column = 1,
+            in_=self,
+            column=1,
             #columnspan=2,
-            row = 2,
-            sticky = 'news'
+            row=2,
+            sticky='news'
         )
         self.info_label.grid(
-            in_ = self,
-            column = 1,
+            in_=self,
+            column=1,
             columnspan=2,
-            row = 4,
-            sticky = 'news'
+            row=4,
+            sticky='news'
         )
 
         # bind the table menu to right-click on the treeview
@@ -162,7 +162,7 @@ class Application(Tkinter.Tk):
             ('command', 'View results', self._view_results),
             ('command', 'View images', self._view_images),
             ('command', 'View seed masks', self._view_seed_masks),
-#            ('command', 'View germination', self._view_algo_desc),
+           # ('command', 'View germination', self._view_algo_desc),
             ('separator', None, None),
             ('command', 'Save results', self._save_results),
             ('command', 'Save masks', self._save_masks),
@@ -191,7 +191,7 @@ class Application(Tkinter.Tk):
 
     def _refresh_exp(self):
         if Experiment.updated:
-            print("refreshing GUI")
+            print("Refreshing GUI")
             self._populate_experiment_table()
             Experiment.updated = False
         self.after(100, self._refresh_exp)
@@ -286,13 +286,9 @@ class Application(Tkinter.Tk):
         self.yuv_panel_ranges = YUVPanelRanges(self, exp)
 
     def _process_images(self):
+        print("Preparing to process image series")
         exp = self._get_exp()
-        eid = self._get_exp_idx() + 1
-        exp._eid = eid
-
-
-        # If the user hasn't labelled panels for this experiment we can't
-        # process the experiment
+        # If the user hasn't labelled panels for this experiment we can't process the experiment
         if not exp.yuv_ranges_set:
             messagebox.showwarning(
                 "",
@@ -446,7 +442,7 @@ class Application(Tkinter.Tk):
         self.panel_tool = PanelTool()
 
     def _documentation(self):
-        print("_documentation method")
+        print("Read documentation at https://github.com/Crop-Phenomics-Group/SeedGerm/blob/master/README.txt")
 
     def _about(self):
         self.about_window = AboutWindow(self)

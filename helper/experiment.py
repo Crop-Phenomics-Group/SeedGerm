@@ -12,9 +12,9 @@ class Experiment(object):
     updated = False
 
     def __init__(self, name=None, exp_path=None, img_path=None, panel_n=None, seeds_col_n=None, seeds_row_n=None,
-                 species="brassica", start_img=0, end_img=None, bg_remover="GMM", panel_labelled=False,
+                 species="Brassica", start_img=0, end_img=None, bg_remover="GMM", panel_labelled=False,
                  _yuv_ranges_set=False,
-                 _eid=None, _status="", use_colour=False):
+                 _eid=None, _status="", use_colour=False, use_delta=False):
         self.name = name
         self.img_path = img_path
         self.panel_n = panel_n
@@ -29,6 +29,7 @@ class Experiment(object):
         self._eid = _eid
         self._status = _status
         self.use_colour = use_colour
+        self.use_delta = use_delta
 
         self.exp_path = exp_path  # "./data/experiments/%s" % (slugify(self.name))
 

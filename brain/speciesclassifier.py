@@ -8,6 +8,7 @@ Created on Mon Jan 18 10:11:47 2016
 import os
 
 import numpy as np
+import tqdm
 from imageio import imread
 from skimage.measure import regionprops
 from skimage.morphology import dilation
@@ -25,7 +26,7 @@ pj = os.path.join
 
 class SpeciesClassifier:
     def __init__(self, seed="default", spp_mask_dilate=3, seed_pix_n=50, germ_true_width=5, clf_contamination=0.1,
-                 area_growth_min=1.25, use_colour=False):
+                 area_growth_min=1.25, use_colour=False, use_delta=False):
         self.seed = seed
         self.spp_mask_dilate = spp_mask_dilate
         self.seed_pix_n = seed_pix_n
@@ -33,6 +34,7 @@ class SpeciesClassifier:
         self.clf_contamination = clf_contamination
         self.area_growth_min = area_growth_min
         self.use_colour = use_colour
+        self.use_delta = use_delta
 
     @property
     def extra(self):
@@ -99,63 +101,70 @@ class SpeciesClassifier:
         areas = np.vstack(areas)
         hu_feas = np.vstack(hu_feas)
         lengths = np.vstack(lengths)
-        self.delta_area = np.zeros((areas.shape[0], 1))
-        self.delta_hu_feas = np.zeros((hu_feas.shape[0], 7))
-        self.delta_lengths = np.zeros((lengths.shape[0], 3))
-        counter = 0
-        # For i in total number of images
-        for i in range(len(initial_areas)):
-            # For j in largest seed label
-            for j in range(np.max(initial_areas[i][:, 1])):
-                # If first image
-                if i == 0:
-                    # If seed label is present in current image array
-                    if np.isin(j + 1, initial_areas[i][:, 1]):
-                        id = j + 1
-                        if np.isin(id, initial_areas[i + 1][:, 1]):
+        if self.use_delta:
+            self.delta_area = np.zeros((areas.shape[0], 1))
+            self.delta_hu_feas = np.zeros((hu_feas.shape[0], 7))
+            self.delta_lengths = np.zeros((lengths.shape[0], 3))
+            counter = 0
+            # For i in total number of images
+            for i in range(len(initial_areas)):
+                # For j in largest seed label
+                for j in range(np.max(initial_areas[i][:, 1])):
+                    # If first image
+                    if i == 0:
+                        # If seed label is present in current image array
+                        if np.isin(j + 1, initial_areas[i][:, 1]):
+                            id = j + 1
+                            if np.isin(id, initial_areas[i + 1][:, 1]):
+                                curr_arr = initial_areas[i][:, 1]
+                                curr = np.argwhere(curr_arr == id)
+                                next_arr = initial_areas[i + 1][:, 1]
+                                next = np.argwhere(next_arr == id)
+                                # As the delta for the first image is undefined, set it to the difference between the first
+                                # and second image
+                                self.delta_area[counter, 0] = np.abs(initial_areas[i + 1][next, 0] - initial_areas[i][curr, 0])
+                                self.delta_lengths[counter, :] = np.abs(
+                                    initial_lengths[i + 1][next, :3] - initial_lengths[i][curr, :3])
+                                self.delta_hu_feas[counter, :] = np.abs(
+                                    initial_hu_feas[i + 1][next, :7] - initial_hu_feas[i][curr, :7])
+                                counter += 1
+                    else:
+                        # If seed label is present in current image array
+                        if np.isin(j + 1, initial_areas[i][:, 1]):
+                            id = j + 1
+                            # Get indices of same seed in previous and current image array
                             curr_arr = initial_areas[i][:, 1]
                             curr = np.argwhere(curr_arr == id)
-                            next_arr = initial_areas[i + 1][:, 1]
-                            next = np.argwhere(next_arr == id)
-                            # As the delta for the first image is undefined, set it to the difference between the first
-                            # and second image
-                            self.delta_area[counter, 0] = np.abs(initial_areas[i + 1][next, 0] - initial_areas[i][curr, 0])
-                            self.delta_lengths[counter, :] = np.abs(
-                                initial_lengths[i + 1][next, :3] - initial_lengths[i][curr, :3])
-                            self.delta_hu_feas[counter, :] = np.abs(
-                                initial_hu_feas[i + 1][next, :7] - initial_hu_feas[i][curr, :7])
-                            counter += 1
-                else:
-                    # If seed label is present in current image array
-                    if np.isin(j + 1, initial_areas[i][:, 1]):
-                        id = j + 1
-                        # Get indices of same seed in previous and current image array
-                        curr_arr = initial_areas[i][:, 1]
-                        curr = np.argwhere(curr_arr == id)
-                        prev_arr = initial_areas[i - 1][:, 1]
-                        prev = np.argwhere(prev_arr == id)
-                        if curr.size != prev.size:
-                            # If seed disappears or new seed, set it's delta to the mean of other seeds
-                            self.delta_area[counter, 0] = np.mean(self.delta_area[0:counter, 0])
-                            self.delta_lengths[counter, :] = np.mean(self.delta_lengths[0:counter, :])
-                            self.delta_hu_feas[counter, :] = np.mean(self.delta_hu_feas[0:counter, :])
-                            counter += 1
-                        else:
-                            # Create delta features i.e. seed feature from this image - seed feature from previous image
-                            self.delta_area[counter, 0] = np.abs(
-                                initial_areas[i][curr, 0] - initial_areas[i - 1][prev, 0])
-                            self.delta_lengths[counter, :] = np.abs(
-                                initial_lengths[i][curr, :3] - initial_lengths[i - 1][prev, :3])
-                            self.delta_hu_feas[counter, :] = np.abs(
-                                initial_hu_feas[i][curr, :7] - initial_hu_feas[i - 1][prev, :7])
-                            counter += 1
+                            prev_arr = initial_areas[i - 1][:, 1]
+                            prev = np.argwhere(prev_arr == id)
+                            if curr.size != prev.size:
+                                # If seed disappears or new seed, set it's delta to the mean of other seeds
+                                self.delta_area[counter, 0] = np.mean(self.delta_area[0:counter, 0])
+                                self.delta_lengths[counter, :] = np.mean(self.delta_lengths[0:counter, :])
+                                self.delta_hu_feas[counter, :] = np.mean(self.delta_hu_feas[0:counter, :])
+                                counter += 1
+                            else:
+                                # Create delta features i.e. seed feature from this image - seed feature from previous image
+                                self.delta_area[counter, 0] = np.abs(
+                                    initial_areas[i][curr, 0] - initial_areas[i - 1][prev, 0])
+                                self.delta_lengths[counter, :] = np.abs(
+                                    initial_lengths[i][curr, :3] - initial_lengths[i - 1][prev, :3])
+                                self.delta_hu_feas[counter, :] = np.abs(
+                                    initial_hu_feas[i][curr, :7] - initial_hu_feas[i - 1][prev, :7])
+                                counter += 1
 
         # Get the number of seeds to train on
         to_analyse = np.sum(item.shape[0] for item in initial_areas[:to_analyse])
         # Create array containing seed features from all images
-        self.all_data = np.hstack([hu_feas, self.delta_hu_feas, areas, self.delta_area, lengths, self.delta_lengths])
+        if self.use_delta:
+            self.all_data = np.hstack([hu_feas, self.delta_hu_feas, areas, self.delta_area, lengths, self.delta_lengths])
+        else:
+            self.all_data = np.hstack([hu_feas, areas, lengths])
         # Create training data for one class SVM
-        hu_feas = np.hstack([hu_feas[:to_analyse, :], self.delta_hu_feas[:to_analyse, :], areas[:to_analyse, :], self.delta_area[:to_analyse, :], lengths[:to_analyse, :], self.delta_lengths[:to_analyse, :]]) #added in area and delta area.
+        if self.use_delta:
+            hu_feas = np.hstack([hu_feas[:to_analyse, :], self.delta_hu_feas[:to_analyse, :], areas[:to_analyse, :], self.delta_area[:to_analyse, :], lengths[:to_analyse, :], self.delta_lengths[:to_analyse, :]]) #added in area and delta area.
+        else:
+            hu_feas = np.hstack([hu_feas[:to_analyse, :], areas[:to_analyse, :], lengths[:to_analyse, :]])
         if self.use_colour:
             color_feas = np.hstack([np.vstack(colors_r), np.vstack(colors_g), np.vstack(colors_b)])
 
@@ -355,26 +364,29 @@ class SpeciesClassifier:
             areas = np.vstack(areas)
             hu_feas = np.vstack(hu_feas)
             lengths = np.vstack(lengths)
-            delta_areas = []
-            delta_hu_feas = []
-            delta_lengths = []
+            if self.use_delta:
+                delta_areas = []
+                delta_hu_feas = []
+                delta_lengths = []
 
-            for j in range(areas.shape[0]):
-                if j == 0:
-                    delta_areas.append(areas[j+1]-areas[j])
-                    delta_hu_feas.append(hu_feas[j+1]-hu_feas[j])
-                    delta_lengths.append(lengths[j+1]-lengths[j])
-                else:
-                    delta_areas.append(areas[j]-areas[j-1])
-                    delta_hu_feas.append(hu_feas[j]-hu_feas[j-1])
-                    delta_lengths.append(lengths[j]-lengths[j-1])
+                for j in range(areas.shape[0]):
+                    if j == 0:
+                        delta_areas.append(areas[j+1]-areas[j])
+                        delta_hu_feas.append(hu_feas[j+1]-hu_feas[j])
+                        delta_lengths.append(lengths[j+1]-lengths[j])
+                    else:
+                        delta_areas.append(areas[j]-areas[j-1])
+                        delta_hu_feas.append(hu_feas[j]-hu_feas[j-1])
+                        delta_lengths.append(lengths[j]-lengths[j-1])
 
-            delta_areas = np.vstack(delta_areas)
-            delta_lengths = np.vstack(delta_lengths)
-            delta_hu_feas = np.vstack(delta_hu_feas)
+                delta_areas = np.vstack(delta_areas)
+                delta_lengths = np.vstack(delta_lengths)
+                delta_hu_feas = np.vstack(delta_hu_feas)
 
-            hu_feas = np.hstack(
-                [hu_feas, delta_hu_feas, areas, delta_areas, lengths, delta_lengths])  # added in area and delta area.
+                hu_feas = np.hstack(
+                    [hu_feas, delta_hu_feas, areas, delta_areas, lengths, delta_lengths])  # added in area and delta area.
+            else:
+                hu_feas = np.hstack([hu_feas, areas, lengths])
             hu_feas = (hu_feas - self.hu_feas_mu) / (self.hu_feas_stds + 1e-9)
 
             # hu_preds = self.clf_hu.score_samples(hu_feas) #GMM

@@ -91,7 +91,7 @@ class AddExperiment(Tkinter.Toplevel):
 
         self.seeds_per_panel_col_label = Tkinter.Label(
             master=self,
-            text="Cols: ",
+            text="Columns: ",
             anchor=Tkinter.W
         )
         self.seeds_per_panel_col_entry = Tkinter.Entry(master=self)
@@ -111,11 +111,19 @@ class AddExperiment(Tkinter.Toplevel):
 
         self.use_colour_label = Tkinter.Label(
             master=self,
-            text="Use Colour: ",
+            text="Use colour: ",
             anchor=Tkinter.W
         )
         self.use_colour = Tkinter.IntVar(self)
         self.use_colour_box = Tkinter.Checkbutton(master=self, variable=self.use_colour)
+
+        self.use_delta_features = Tkinter.Label(
+            master=self,
+            text="Use delta features: ",
+            anchor=Tkinter.W
+        )
+        self.use_delta = Tkinter.IntVar(self)
+        self.use_delta_box = Tkinter.Checkbutton(master=self, variable=self.use_delta)
 
         self.cancel_button = Tkinter.Button(
             master=self,
@@ -281,6 +289,21 @@ class AddExperiment(Tkinter.Toplevel):
             sticky='ew'
         )
 
+        self.use_delta_features.grid(
+            in_=self,
+            column=3,
+            row=12,
+            sticky='news'
+        )
+
+        self.use_delta_box.grid(
+            in_=self,
+            column=4,
+            columnspan=1,
+            row=12,
+            sticky='ew'
+        )
+
         self.cancel_button.grid(
             in_=self,
             column=2,
@@ -339,6 +362,7 @@ class AddExperiment(Tkinter.Toplevel):
         if len(start_img) < 1:
             start_img = '-1'
         use_colour = self.use_colour.get()
+        use_delta = self.use_delta.get()
         pre_conditions = [
             (len(name) < 1, "Experiment name is too short"),
             (len(dir_) < 1, "Need to enter a directory"),
@@ -399,6 +423,7 @@ class AddExperiment(Tkinter.Toplevel):
                          end_img=end_img,
                          bg_remover=bg_remover,
                          use_colour=use_colour,
+                         use_delta=use_delta,
                          panel_labelled=False,
                          _yuv_ranges_set=False,
                          _status="")
