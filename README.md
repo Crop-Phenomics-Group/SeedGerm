@@ -1,10 +1,10 @@
 # SeedGerm
 
-Joshua Colmer<sup>1</sup>, Aaron Bostrom<sup>1</sup>, Joshua Ball <sup>1</sup>, Daniel Reynolds<sup>1</sup>, Ji Zhou<sup>1,2*</sup>
+Joshua Colmer<sup>1</sup>, Aaron Bostrom<sup>1</sup>, Joshua Ball <sup>1</sup>, Daniel Reynolds<sup>1</sup>, Ji Zhou<sup>1,2,3*</sup>
 
 <sup>1</sup>Earlham Institute, Norwich Research Park, Norwich UK  
 <sup>2</sup>University of East Anglia, Norwich Research Park, Norwich UK  
-<sup>*</sup>Correspondence: ji.zhou@earlham.ac.uk or ji.zhou@uea.ac.uk
+<sup>3</sup>Plant Phenomics Research Center, UK-China Plant Phenomics Centre, Jiangsu Collaborative Innovation Center for Modern Crop Production, Nanjing Agricultural University, Nanjing, Jiangsu, 210095, China
 
 ## Install Python, Anaconda and Libraries
 If you wish to run SeedGerm from the code, you will need to set up Python on your system. 
