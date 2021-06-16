@@ -174,7 +174,7 @@ class SpeciesClassifier:
         hu_feas = (hu_feas - self.hu_feas_mu) / (self.hu_feas_stds + 1e-9)
 
         # Train a one class SVM on the hu features
-        self.clf_hu = svm.OneClassSVM(nu=0.03, kernel="rbf", gamma=0.001, random_state=0)
+        self.clf_hu = svm.OneClassSVM(nu=0.03, kernel="rbf", gamma=0.001)
         self.clf_hu.fit(hu_feas)
 
         # If using colour, normalise the colour histograms i.e. z = (x-mu)/sigma
@@ -183,7 +183,7 @@ class SpeciesClassifier:
             self.color_feas_stds = color_feas.std(axis=0)
             color_feas = (color_feas - self.color_feas_mu) / (self.color_feas_stds + 1e-9)
             # Train a one class SVM on the colour features
-            self.clf_color = svm.OneClassSVM(nu=0.03, kernel="rbf", gamma=0.001, random_state=0)
+            self.clf_color = svm.OneClassSVM(nu=0.03, kernel="rbf", gamma=0.001)
             self.clf_color.fit(color_feas)
 
     def HMM_TEST_build_classifier(self):
