@@ -7,8 +7,9 @@ and germination speed. Morphological traits of all seeds are also recorded throu
 
 *Via source code*
 1. Clone the SeedGerm repository or download the zip/tar.gz file containing the source code from the most recent release
-2. Open command prompt (cmd) and change directory to the folder containing main.py
-3. With an Anaconda environment activated or Python added to PATH, enter the following command in cmd: 'python main.py'
+2. Please check that the versions of the required packages match your Python environment (list of versions at bottom of document)
+3. Open command prompt (cmd) and change directory to the folder containing main.py
+4. With an Anaconda environment activated or Python added to PATH, enter the following command in cmd: 'python main.py'
 
 *Via .exe file*
 1. Download the .exe file from SeedGerm's most recent release
@@ -108,4 +109,25 @@ c) 'panel_results.csv' - this file contains the image index at which each seed i
     of how these properties may link to germination success/timing.
 d) 'overall_results.csv' - this file contains some basic summary statistics of all seeds in the individual panels across the experiment.
    Each row denotes a panel and each column a statistic.
+   
+   
+   
+8. Python package versions
+SeedGerm was packaged using the following package versions. SeedGerm may be compatible with different versions of each package but if
+errors are encountered, it is recommended to use the specified versions below:
+Cython                 0.29.13
+Keras                  2.2.5
+matplotlib             3.1.3
+numba                  0.51.2
+numpy                  1.19.2
+opencv-python          4.1.1.26
+pandas                 0.24.2
+scikit-image           0.15.0
+scikit-learn           0.23.2
+scipy                  1.2.3
+seaborn                0.11.0
+setuptools             50.3.1.post20201107
+tensorflow             2.0.0
+tinydb                 3.13.0
+
     
